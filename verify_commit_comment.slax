@@ -1,0 +1,46 @@
+/*
+ * Title               : verify_commit_comment
+ * Last modified date  : 7.11.2018
+ * Author              : jumation.com
+ * Description         : Verifies the format of the commit comment.
+ *                       Commit comment has to contain four fields. Fields
+ *                       are separated by a space, forward slash and a space
+ *                       character. The first field is a 4 to 140 characters
+ *                       long commit message describing the change. The second
+ *                       field is a change initiator department code consisting
+ *                       of two capital letters. For example, GN(global NOC),
+ *                       UE(US engineering), etc. Third field is a change type.
+ *                       Change type is three capital letters. For example,
+ *                       SCH(standard change), ECH(emergency change),
+ *                       SUP(software upgrade), etc. Fourth field is an eight-
+ *                       digit change ID.
+ * Options             :
+ * Notes               :
+ */
+
+version 1.0;
+
+ns junos = "http://xml.juniper.net/junos/*/junos";
+ns xnm = "http://xml.juniper.net/xnm/1.1/xnm";
+ns jcs = "http://xml.juniper.net/junos/commit-scripts/1.0";
+
+import "../import/junos.xsl";
+
+
+match configuration {
+
+	/* Ignore the commit check. */
+	if ( not( $junos-context/commit-context/commit-check ) ) {
+
+		var $msg = $junos-context/commit-context/commit-comment;
+	
+		/* POSIX ERE format. */
+		var $pattern = "^.{4,140} / [A-Z]{2} / [A-Z]{3} / [0-9]{8}$";
+	
+		if ( not( jcs:regex( $pattern, $msg ) ) ) {
+			<xnm:error> {
+				<message> jcs:printf("'%s' is an invalid comment format!", $msg);
+			}
+		}
+	}
+}
